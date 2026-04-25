@@ -107,23 +107,35 @@ namespace EduAPI.Controllers
         }
 
         // ── Agregar lección con video (admin) ─────────────────────────────────
-        [HttpPost("lecciones")]
-        [Authorize(Roles = "admin")]
-        [Consumes("multipart/form-data")]
-        [RequestSizeLimit(524_288_000)] // 500 MB
-        public async Task<IActionResult> AgregarLeccion([FromForm] CrearLeccionDto dto, [FromForm] IFormFile video)
+     [HttpPost("lecciones")]
+[Authorize(Roles = "admin")]
+[Consumes("multipart/form-data")]
+[RequestSizeLimit(524_288_000)] // 500 MB
+public async Task<IActionResult> AgregarLeccion([FromForm] CrearLeccionDto dto, [FromForm] IFormFile video)
+{
+    try
+    {
+        var videoUrl = await _cloudinaryService.SubirVideoAsync(video);
+
+        var leccion = new Leccion
         {
-            var videoUrl = await _cloudinary.SubirVideoAsync(video);
-            var leccion = new Leccion
-            {
-                CursoId = dto.CursoId, Titulo = dto.Titulo,
-                Descripcion = dto.Descripcion, VideoUrl = videoUrl,
-                Orden = dto.Orden
-            };
-            _db.Lecciones.Add(leccion);
-            await _db.SaveChangesAsync();
-            return Ok(new { message = "Lección agregada", id = leccion.Id });
-        }
+            CursoId = dto.CursoId,
+            Titulo = dto.Titulo,
+            Descripcion = dto.Descripcion,
+            VideoUrl = videoUrl,
+            Orden = dto.Orden
+        };
+
+        _db.Lecciones.Add(leccion);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Lección agregada", id = leccion.Id });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return BadRequest(new { error = ex.Message });
+    }
+}
 
         // ── Inscribirse a un curso ────────────────────────────────────────────
         [HttpPost("{id}/inscribirse")]
