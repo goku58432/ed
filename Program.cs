@@ -51,7 +51,7 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", p =>
     p.WithOrigins(
         "http://localhost:3000",
         "http://localhost:5173",
-        "https://TU_SITIO_NETLIFY.netlify.app"  // ← cambiar después del deploy
+        "https://stately-quokka-35928a.netlify.app"  // ← cambiar después del deploy
     )
     .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
