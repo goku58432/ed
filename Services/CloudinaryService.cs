@@ -19,18 +19,30 @@ namespace EduAPI.Services
         }
 
         public async Task<string> SubirVideoAsync(IFormFile file)
+{
+    // Validar tamaño antes de subir (100 MB límite plan Free)
+    if (file.Length > 100 * 1024 * 1024)
+        throw new InvalidOperationException("El video no puede superar 100 MB. Comprime el video antes de subirlo.");
+
+    try
+    {
+        var uploadParams = new VideoUploadParams
         {
-            await using var stream = file.OpenReadStream();
-            var result = await _cloudinary.UploadAsync(new VideoUploadParams
-            {
-                File = new FileDescription(file.FileName, stream),
-                Folder = "eduplatform/videos",
-                UniqueFilename = true,
-                EagerAsync = true
-            });
-            if (result.Error != null) throw new Exception(result.Error.Message);
-            return result.SecureUrl.ToString();
-        }
+            File = new FileDescription(file.FileName, file.OpenReadStream()),
+            Folder = "eduplatform/videos"
+        };
+        var result = await _cloudinary.UploadAsync(uploadParams);
+        
+        if (result.StatusCode != System.Net.HttpStatusCode.OK)
+            throw new InvalidOperationException($"Error al subir video: {result.Error?.Message}");
+            
+        return result.SecureUrl.ToString();
+    }
+    catch (Exception ex) when (ex.Message.Contains("RequestEntityTooLarge"))
+    {
+        throw new InvalidOperationException("El video es demasiado grande para el plan actual de Cloudinary.");
+    }
+}
 
         public async Task<string> SubirImagenAsync(IFormFile file)
         {
